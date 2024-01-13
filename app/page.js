@@ -1,113 +1,108 @@
-import Image from 'next/image'
+'use client'
+import OpenAI from "openai";
+import { Button } from "@/components/ui/button"
+import CardComponent from "@/components/cardComponent"
+import { useState, useRef } from "react";
+import axios from "axios"
 
 export default function Home() {
+  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+  const [bae64Image1, setBase64Image1] = useState(null)
+  const [bae64Image2, setBase64Image2] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [aiResponse, setAiResponse] = useState(null);
+  const fileInputRef1 = useRef(null);
+  const fileInputRef2 = useRef(null);
+
+
+  async function main() {
+    setLoading(true)
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const targetElement = document.getElementById('loading');
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth' });
+    }
+    try {
+
+      const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+        model: "gpt-4-vision-preview",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "You are the highly knowledgeable scientific image analysis expert. Your task is to compare both the images and write a detailed case study of less then 1300 characters and greater then 800 characters in a paragraph after comparing both the images." },
+              {
+                type: "image_url",
+                image_url: {
+                  "url": bae64Image1,
+                },
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  "url": bae64Image2,
+                },
+              },
+            ],
+          },
+        ],
+        max_tokens: 500
+      }, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      setAiResponse(response.data.choices[0].message.content);
+      setLoading(false);
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const Gptreponse = document.getElementById('gpt-reponse');
+      if (Gptreponse) {
+        Gptreponse.scrollIntoView({ behavior: 'smooth' });
+      }
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+  const OpenAIButtonClick = () => {
+    main();
+  }
+  const clearFileData = () => {
+    if (fileInputRef1.current) {
+      fileInputRef1.current.value = null;
+    }
+    if (fileInputRef2.current) {
+      fileInputRef2.current.value = null;
+    }
+    setBase64Image1(null);
+    setBase64Image2(null);
+    setAiResponse(null);
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <container>
+      <div className='bg-slate-200 min-h-screen max-w-screen overflow-hidden flex flex-col justify-center items-center shadow-xl'>
+        <h1 className='font-bold font-mono text-xl mb-6 mt-5'>Case Study of Images</h1>
+        <div className="flex justify-center items-center flex-wrap">
+          <CardComponent setBase64Image={setBase64Image1} Base64Image={bae64Image1} fileref={fileInputRef1} number={1} />
+          <CardComponent setBase64Image={setBase64Image2} Base64Image={bae64Image2} fileref={fileInputRef2} number={2} />
         </div>
+        <Button disabled={!bae64Image1 || !bae64Image2} onClick={OpenAIButtonClick} className="mt-4">Ask ChatGPt to write Case Study of Images</Button>
+        {
+          aiResponse && <div className="flex flex-col justify-center items-center m-10 bg-white p-4 rounded-md shadow-xl max-w-[800px]">
+            <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-2xl mb-4 border-b" id="gpt-reponse">
+              AI Response
+            </h1>
+            <p classname="mt-3 li"> <p dangerouslySetInnerHTML={{ __html: aiResponse.replace(/\n/g, '<br>') }} /></p>
+            <Button className="my-4" onClick={clearFileData}>Reset</Button>
+          </div>
+        }
+        {
+          loading && <p classname="text-center text-4xl" id="loading" style={{ marginTop: "20px", fontSize: "20px" }}>Loading ...</p>
+        }
       </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800 hover:dark:bg-opacity-30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </container>
   )
 }
