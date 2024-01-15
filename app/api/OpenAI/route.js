@@ -6,10 +6,6 @@ const configuration = new Configuration({
 });
 const openai = new OpenAIApi(configuration);
 
-export const config = {
-    runtime: "edge",
-};
-
 export async function POST(request) {
     const { base64Image1, base64Image2 } = await request.json();
 
