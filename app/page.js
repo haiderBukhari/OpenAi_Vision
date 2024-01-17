@@ -74,7 +74,6 @@ export default function Home() {
             break;
           }
           var currentChunk = new TextDecoder().decode(value);
-          console.log(currentChunk)
           setAiResponse((prev) => prev + currentChunk);
           window.scrollTo(0, document.body.scrollHeight)
         }
