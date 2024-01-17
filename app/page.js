@@ -5,7 +5,6 @@ import CardComponent from "@/components/cardComponent"
 import { useState, useRef } from "react";
 import ChatOpneAi from "@/components/chatComponent";
 import axios from "axios"
-import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -27,26 +26,18 @@ export default function Home() {
     imageGenerate: false,
     Texttotext: false
   })
-  const [imageGenerationText, setImageGenerationText] = useState("");
-  const [loading, setLoading] = useState(false);
+  const configuration = new Configuration({
+    apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+  });
+  const openai = new OpenAIApi(configuration);
+
   const ImageGenerate = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.post(`https://api.openai.com/v1/images/generations`, {
-        prompt: imageGenerationText,
-        size: "1024x1024",
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY}`,
-        },
-      });
-      setImageUrl(response.data.data[0].url)
-      setLoading(false)
-    } catch (error) {
-      console.error('Error calling OpenAI API:', error);
-      setLoading(false)
-    }
+    const response = await openai.createImage({
+      model: "dall-e-3",
+      prompt: "a white siamese cat",
+      size: "1024x1024",
+    });
+    console.log(response);
   }
 
   async function main() {
@@ -149,20 +140,10 @@ export default function Home() {
           </>
         }
         {
-          serviceOption === 2 && <div className="flex flex-col justify-center items-center">
-            <h1 className='font-bold font-mono text-xl mb-6 mt-10'>Write Text and visualize your idea into reality</h1>
-            {!imageUrl &&
-              <>
-                <Input onChange={(e) => { setImageGenerationText(e.target.value) }} className="max-w-[500px] min-w-[340px] mt-2 mx-3" type="text" placeholder="Enter the text to generate image" />
-                <Button disabled={loading} className="my-4 ml-3" onClick={generateImage}>{loading ? 'Loading...' : 'Generate'}</Button>
-              </>
-
-            }
-            {imageUrl && <img className="m-10 bg-white rounded-md shadow-xl max-w-[700px] max-h-[600px]" loading="lazy" src={imageUrl} alt='' />}
-            {imageUrl &&
-              <div className="flex justify-center items-center">
-                <Button className="my-4 ml-3" onClick={() => { setImageUrl(null); setImageGenerationText("") }}>Clear</Button>
-              </div>
+          serviceOption === 2 && <div>
+            <Button className="my-4 ml-3" onClick={generateImage}>Generate</Button>
+            {
+              imageUrl && <img src={imageUrl} alt='' />
             }
           </div>
         }
